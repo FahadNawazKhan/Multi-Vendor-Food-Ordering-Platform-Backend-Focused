@@ -3,6 +3,7 @@ import dotenv from 'dotenv'
 import cookieParser from 'cookie-parser'
 import { dbConnect } from './config/dbconnect.js'
 import { authRouter } from './routes/auth.routes.js'
+import { verifyToken } from './middlewares/auth.middleware.js'
 
 dotenv.config()
 const server = express()
@@ -10,6 +11,10 @@ const PORT = process.env.PORT || 3000
 
 server.use(express.json())
 server.use(cookieParser())
+
+server.get('/protected', verifyToken, (req, res) => {
+    res.json({ user: req.user });
+});
 
 server.use('/api/auth',authRouter)
 

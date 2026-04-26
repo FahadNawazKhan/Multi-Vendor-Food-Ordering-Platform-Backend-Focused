@@ -13,7 +13,7 @@ export const validateRegister = async (req, res, next) => {
             })
         }
 
-        if (!user.email || !user.password || !user.fullname || !user.role || !user.phone) {
+        if (!user.email || !user.password || !user.fullname  || !user.phone) {
             return res.status(400).json({
                 success: false,
                 message: 'Missing Data',
