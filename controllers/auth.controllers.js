@@ -1,6 +1,7 @@
 import { User } from "../models/User.js"
 import { createUser } from "../services/createUser.js"
 import { comparePassword, hashPassword } from "../utils/bcrypt.js"
+import { accessToken, refreshToken } from "../utils/jwt.js"
 
 export const registerUser = async (req, res) => {
     try {
@@ -10,19 +11,18 @@ export const registerUser = async (req, res) => {
         user.password = password
         await createUser(user)
 
-        res.send({
+        res.status(201).json({
             success: true,
             message: 'User Registered Successfully',
             data: user
         })
 
     } catch (error) {
-        res.send({
+        res.status(500).json({
             success: false,
             message: 'Internal Server Error',
             data: null
         })
-        throw error
     }
 }
 
@@ -32,18 +32,35 @@ export const loginUser = async (req, res) => {
 
         const user = await User.findOne({ email });
         if (!user) {
-            return res.json({ success: false, message: "Invalid credentials" });
+            return res.status(401).json({ success: false, message: "Invalid credentials" });
         }
 
         const isMatch = await comparePassword(password, user.password);
         if (!isMatch) {
-            return res.json({ success: false, message: "Invalid credentials" });
+            return res.status(401).json({ success: false, message: "Invalid credentials" });
         }
 
         const access = accessToken(user);
-        const refresh = refreshToken(user);
+        const refresh = refreshToken(user)
 
-        res.json({
+        user.refreshToken = refresh
+        await user.save()
+
+        res.cookie('accessToken', access, {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'Lax',
+            maxAge: 15 * 60 * 1000 // 15 minutes
+        });
+
+        res.cookie('refreshToken', refresh, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'None',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
+        res.status(200).json({
             success: true,
             message: "Login successful",
             tokens: { access, refresh },
@@ -51,11 +68,10 @@ export const loginUser = async (req, res) => {
         });
 
     } catch (error) {
-        res.send({
+        res.status(500).json({
             success: false,
             message: 'Internal Server Error',
             data: null
         })
-        throw error
     }
 }

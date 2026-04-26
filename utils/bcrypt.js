@@ -6,7 +6,7 @@ const salt = parseInt(process.env.SALT_ROUNDS) || 11
 
 export const hashPassword = async (password) => {
     try {
-        return await bcrypt.hash(password, saltRounds)
+        return await bcrypt.hash(password, salt)
     } catch (error) {
         throw new Error('Password hashing failed')
     }
