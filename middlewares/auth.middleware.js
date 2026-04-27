@@ -1,3 +1,4 @@
+import { User } from "../models/User.js";
 import { comparePassword } from "../utils/bcrypt.js";
 import jwt from "jsonwebtoken";
 
@@ -13,7 +14,7 @@ export const validateRegister = async (req, res, next) => {
             })
         }
 
-        if (!user.email || !user.password || !user.fullname  || !user.phone) {
+        if (!user.email || !user.password || !user.fullname || !user.phone) {
             return res.status(400).json({
                 success: false,
                 message: 'Missing Data',
@@ -65,8 +66,17 @@ export const verifyToken = async (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN);
-        req.user = decoded
-        next()
+        const user = await User.findById(decoded.id);
+
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: "User no longer exists"
+            });
+        }
+
+        req.user = user;
+        next();
     } catch (error) {
         return res.status(401).json({
             success: false,
@@ -75,3 +85,27 @@ export const verifyToken = async (req, res, next) => {
         })
     }
 }
+
+export const authorize = (...allowedRoles) => {
+    return (req, res, next) => {
+        const user = req.user;
+
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized"
+            });
+        }
+
+        const isAllowed = allowedRoles.includes(user.role);
+
+        if (!isAllowed) {
+            return res.status(403).json({
+                success: false,
+                message: "Forbidden"
+            });
+        }
+
+        next();
+    };
+};
