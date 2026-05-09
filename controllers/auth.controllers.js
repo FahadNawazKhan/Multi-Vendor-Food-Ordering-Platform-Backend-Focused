@@ -1,5 +1,5 @@
 import { User } from "../models/User.js"
-import { createUser } from "../services/createUser.js"
+import { createUser } from "../services/user.services.js"
 import { comparePassword, hashPassword } from "../utils/bcrypt.js"
 import { accessToken, refreshToken } from "../utils/jwt.js"
 
